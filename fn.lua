@@ -29,14 +29,9 @@ do
     end
 
     --- Returns null iterator. null iterator always returns nil.
-    ---@return Fn.Iterator
-    function fn.Iterator:null()
-        return self.new(function() return nil end)
-    end
-
-    --- Return the shallow copied instance of iterator.
-    function fn.Iterator:copy()
-        -- TODO: how??
+    ---@return Fn.FiniteIterator
+    function fn.Iterator.null()
+        return fn.FiniteIterator.new(function() return nil end)
     end
 
     --- Maps iterator with given function.
@@ -264,6 +259,22 @@ do
         end
     end
 
+    --- Returns reversed iterator. It uses self:table() under the hood.
+    ---@return Fn.FiniteIterator
+    ---@nodiscard
+    function fn.FiniteIterator:reversed()
+        local tbl = self:table()
+        return fn:range(#tbl, 1, -1):map( fn:op(".", tbl) )
+    end
+
+    --- Returns sorted iterator. It uses self:table() under the hood.
+    ---@return Fn.FiniteIterator
+    ---@nodiscard
+    function fn.FiniteIterator:sorted(func)
+        local tbl = self:table()
+        table.sort(tbl, func)
+        return fn(tbl)
+    end
 
     ---@class Fn.InfiniteIterator<T>: Fn.Iterator<T>
     fn.InfiniteIterator = setmetatable({}, {__index = fn.Iterator})
@@ -293,9 +304,9 @@ do
     ---@overload fun(self, to: number, _: nil, step: number): Fn.FiniteIterator
     ---@overload fun(self, to: number): Fn.FiniteIterator
     function fn:range(from, to, step)
-        if not from then
-            error("bad argument #2 to fn.range (number expected, got nil or false)")
-        end
+        assert(from, "bad argument #2 to fn.range (number expected, got nil or false)")
+        assert(step ~= 0, "bad argument #4 to fn.range (step must not be 0)")
+
         step = step or 1
         if not to then
             to = from
@@ -304,14 +315,10 @@ do
 
         local current = from
         return fn.FiniteIterator.new(function()
-            if from < to then
-                if to < current then
-                    return nil
-                end
+            if 0 < step then
+                if to < current then return nil end
             else
-                if current < to then
-                    return nil
-                end
+                if current < to then return nil end
             end
 
             local val = current
@@ -336,6 +343,11 @@ do
         end)
     end
 
+
+    function fn:urandom(m, n)
+        return fn.InfiniteIterator.new( fn:bind(math.random, m, n) )
+    end
+
 end
 
 -- fn:op("+")
@@ -356,6 +368,7 @@ do
     ---| ">"
     ---| "and"
     ---| "or"
+    ---| "."
 
     local operators = {
         ["+"]  = function(a, b) return a + b end,
@@ -373,32 +386,69 @@ do
         [">"]  = function(a, b) return a > b end,
         ["and"] = function(a, b) return a and b end,
         ["or"] = function(a, b) return a or b end,
+        ["."] = function(a, b) return a[b] end,
     }
 
     --- Returns operator as a function, with filled parameter
     ---@overload fun(self, symbol: Fn.opSymbol                ): fun(a: any, b: any): any
-    ---@overload fun(self, _: nil, symbol: Fn.opSymbol, b: any): fun(a: any): any
-    ---@overload fun(self, a: any, symbol: Fn.opSymbol, _: nil): fun(b: any): any
-    ---@overload fun(self, a: any, symbol: Fn.opSymbol, b: nil): fun(): any
-    function fn:op(x, y, z)
-        if y == nil and z == nil then
-            return operators[x]
-        end
+    ---@overload fun(self, symbol: Fn.opSymbol, a: any        ): fun(b: any): any
+    ---@overload fun(self, symbol: Fn.opSymbol, _: nil, b: any): fun(a: any): any
+    ---@overload fun(self, symbol: Fn.opSymbol, a: any, b: nil): fun(): any
+    function fn:op(symbol, a, b)
+        local opfunc = operators[symbol]
+        if not opfunc then error("bad argument #2 to fn.op (opSymbol expected)") end
 
-        if operators[y] then
-            if x == nil then
-                return function(a) return operators[y](a, z) end
-            elseif z == nil then
-                return function(b) return operators[y](x, b) end
-            else
-                -- constant?
-                local c = operators[y](x, z)
-                return function() return c end
-            end
+        if a == nil and b == nil then
+            return opfunc
+        elseif a == nil then
+            return function(x) return opfunc(x, b) end
+        elseif b == nil then
+            return function(x) return opfunc(a, x) end
         else
-            error("bad argument #2 to fn.op (opSymbol expected)")
+            local c = opfunc(a, b)
+            return function() return c end
         end
     end
+
+    --- Returns function with prefilled arguments.
+    ---@generic T1, T2, R
+    ---@param func fun(a: T1, ...: T2): R
+    ---@param a T1
+    ---@param ... T2?
+    ---@return fun(...: T2): R
+    function fn:bind(func, a,...)
+        local args1 = table.pack(a, ...)
+        return function(...)
+            local args2 = table.pack(...)
+            local argsTbl = {}
+            argsTbl.n = args1.n + args2.n
+
+            for i=1, args1.n do argsTbl[i] = args1[i] end
+            for j=1, args2.n do argsTbl[j + args1.n] = args2[j] end
+
+            return func(table.unpack(argsTbl))
+        end
+    end
+
+    --- Returns new function which is given function with prefilled arguments.
+    ---@generic T, R
+    ---@param func fun(...: T): R
+    ---@param ... T
+    ---@return fun(): R
+    function fn:bindSeal(func, ...)
+        local args1 = table.pack(...)
+        return function(...)
+            local args2 = table.pack(...)
+            local argsTbl = {}
+            argsTbl.n = args1.n + args2.n
+
+            for i=1, args1.n do argsTbl[i] = args1[i] end
+            for j=1, args2.n do argsTbl[j + args1.n] = args2[j] end
+
+            return func(table.unpack(argsTbl))
+        end
+    end
+
 
 end
 
@@ -410,7 +460,7 @@ do
     ---@param arg table
     function fnMeta:__call(arg)
         if type(arg) == "table" then
-            return fn:counter(1):map(function(i) return arg[i] end)
+            return fn:range(#arg):map(function(i) return arg[i] end)
         end
 
         error("bad argument #2 to fnMeta.__call (table expected)")
