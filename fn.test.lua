@@ -101,6 +101,15 @@ testEquals(
     3
 )
 
+testEquals(
+    fn:range(4):map( fn:bind(string.rep, "*") ):concat("\n"),
+    [[
+*
+**
+***
+****]]
+)
+
 
 section "fn:bind"
 testEquals(fn:bind(math.min, 0)(123, -100), -100)
@@ -110,8 +119,5 @@ testEquals(fn:bind(math.min, 0, -10, -20)(-100), -100)
 testEquals(fn:bind(math.min, 0, -10, -20)(200, 300, -100), -100)
 testEquals(fn:bind(math.min, 0, -10, -20)(), -20)
 testEquals(fn:bind(math.min, 0)(), 0)
-
-local x = fn:bind(math.random, {})
-local v= x(3)
 
 endTest()

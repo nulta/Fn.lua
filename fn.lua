@@ -343,9 +343,36 @@ do
         end)
     end
 
+    --- Returns new InfiniteIterator which repeats through given list.
+    --- Return a null iterator if `#list == 0`.
+    ---@param list table<integer, any>
+    ---@return Fn.InfiniteIterator
+    function fn:repeater(list)
+        if #list == 0 then
+            ---@type Fn.InfiniteIterator
+            return fn.Iterator.null()
+        end
 
-    function fn:urandom(m, n)
-        return fn.InfiniteIterator.new( fn:bind(math.random, m, n) )
+        local current = 0
+        return fn.InfiniteIterator.new(function()
+            current = (current + 1) % #list
+            return list[current]
+        end)
+    end
+
+    --- Returns new InfiniteIterator which creates random numbers.
+    --- - `fn:urandom()`: Returns random float iterator within the range `[0, 1)`.
+    --- - `fn:urandom(m)`: Returns random integer iterator within the range `[1, m]`.
+    --- - `fn:urandom(m, n)`: Returns random integer iterator within the range `[m, n]`.
+    ---@param m integer?
+    ---@param n integer?
+    ---@param randFunc? fun(m: integer?, n: integer?): number RNG function to use instead of math.random.
+    ---@return Fn.InfiniteIterator
+    function fn:urandom(m, n, randFunc)
+        randFunc = randFunc or math.random
+        return fn.InfiniteIterator.new( fn:bindSeal(randFunc, m, n) )
+
+        -- fn:counter(0, 0):map(fn:bind(math.random, 0, 10))
     end
 
 end
@@ -430,7 +457,7 @@ do
         end
     end
 
-    --- Returns new function which is given function with prefilled arguments.
+    --- Returns new function with prefilled arguments, which accepts no other arguments.
     ---@generic T, R
     ---@param func fun(...: T): R
     ---@param ... T
