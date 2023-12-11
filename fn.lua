@@ -437,6 +437,16 @@ do
         end
     end
 
+    -- Workaround function to deal with luajit's mysterious unpack() behavior
+    -- e.g. on luajit, unpack({nil, 1, nil, n=3}) ~= (nil, 1, nil)
+    -- This function gets correct result on such case
+    local function unpack2(packed, count)
+        count = count or 1
+        if count > packed.n then return end
+        return packed[count], unpack2(packed, count + 1)
+    end
+
+
     --- Returns function with prefilled arguments.
     ---@generic T1, T2, R
     ---@param func fun(a: T1, ...: T2): R
@@ -453,7 +463,7 @@ do
             for i=1, args1.n do argsTbl[i] = args1[i] end
             for j=1, args2.n do argsTbl[j + args1.n] = args2[j] end
 
-            return func(table.unpack(argsTbl))
+            return func(unpack2(argsTbl))
         end
     end
 
@@ -463,16 +473,9 @@ do
     ---@param ... T
     ---@return fun(): R
     function fn:bindSeal(func, ...)
-        local args1 = table.pack(...)
-        return function(...)
-            local args2 = table.pack(...)
-            local argsTbl = {}
-            argsTbl.n = args1.n + args2.n
-
-            for i=1, args1.n do argsTbl[i] = args1[i] end
-            for j=1, args2.n do argsTbl[j + args1.n] = args2[j] end
-
-            return func(table.unpack(argsTbl))
+        local args = table.pack(...)
+        return function()
+            return func(unpack2(args))
         end
     end
 
