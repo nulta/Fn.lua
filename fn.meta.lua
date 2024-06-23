@@ -36,7 +36,7 @@ function Fn.FiniteIterator:unique() end
 ---@param test fun(T): boolean
 ---@return Fn.FiniteIterator
 ---@nodiscard
-function Fn.FiniteIterator:limitWhile(test) end
+function Fn.FiniteIterator:stopIf(test) end
 
 --- Skips first n items from iterator.
 ---@generic T
@@ -80,7 +80,7 @@ function Fn.InfiniteIterator:unique() end
 ---@param test fun(T): boolean
 ---@return Fn.InfiniteIterator
 ---@nodiscard
-function Fn.InfiniteIterator:limitWhile(test) end
+function Fn.InfiniteIterator:stopIf(test) end
 
 --- Skips first n items from iterator.
 ---@generic T

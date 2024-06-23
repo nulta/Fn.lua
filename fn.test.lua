@@ -194,5 +194,49 @@ do
         testEquals(Fn:op(".")({a="AA"}, "a"), "AA")
     end
 
+    section "Fn.Iterator"; do
+        test "initializers"
+        testEquals(Fn.Iterator.null():count(), 0)
+        testEquals(Fn:range(100):count(), 100)
+        testEquals(Fn:range(-10, 10):sum(), 0)
+        testEquals(Fn:counter():stopIf(Fn:op("<=", nil, 100)):limit(1000):count(), 100)
+        testEquals(Fn:repeater({"A","B","C"}):limit(9):concat(), "ABCABCABC")
+        -- testEquals(Fn:urandom():limit(100):count(), 100)
+        testTrue(Fn:urandom(100, 101):limit(100):sum() >= 100*100)
+
+        test "methods"
+        testEquals(Fn:range(5):concat(", "), "1, 2, 3, 4, 5")
+        testEquals(Fn:range(100):count(), 100)
+        testEquals(Fn:range(100):every(), true)
+        testEquals(Fn:range(10):filter(function(x) return x % 2 == 0 end):sum(), 2+4+6+8+10)
+        testEquals(Fn:range(100):find(Fn:op(">", nil, 50)), 51)
+
+        local foreachSum = 0
+        Fn:range(10):forEach(function(x) foreachSum = foreachSum + x end)
+        testEquals(foreachSum, 55)
+
+        foreachSum = 0
+        for i, v in Fn:range(100):ipairs() do
+            foreachSum = foreachSum + v
+        end
+        testEquals(foreachSum, 5050)
+
+        test "methods (2)"
+        testEquals(Fn:range(100):limit(10):count(), 10)
+        testEquals(Fn:range(100):map(Fn:op("*", 2)):sum(), 10100)
+        testEquals(Fn:range(100):map(Fn:op("%", nil, 5)):unique():count(), 5)
+        testEquals(Fn:range(4):reduce(Fn:op("*")), 24)
+        testEquals(Fn:range(5):reversed():concat(", "), "5, 4, 3, 2, 1")
+        testEquals(Fn:range(100):skip(10):count(), 90)
+
+        test "methods (3)"
+        testEquals(Fn:range(100):skipWhile(Fn:op("<=", nil, 10)):count(), 90)
+        testEquals(Fn:range(100):map(function(x) return false end):some(), false)
+        testEquals(Fn:range(100):map(Fn:op("==", 50)):some(), true)
+        testEquals(Fn:range(100):reversed():sorted():concat(), Fn:range(100):concat())
+        testEquals(Fn:range(100):stopIf(Fn:op("<", nil, 10)):count(), 9)
+        testEquals(Fn:range(100):skip(10):count(), 90)
+    end
+
     completeAllTest()
 end

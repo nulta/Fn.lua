@@ -101,7 +101,7 @@ do
     ---@param test fun(T): boolean
     ---@return Fn.Iterator
     ---@nodiscard
-    function Fn.Iterator:limitWhile(test)
+    function Fn.Iterator:stopIf(test)
         return self.new(function()
             local val = self()
             if not test(val) then return nil end
@@ -135,6 +135,7 @@ do
 
         return self.new(function()
             if first then
+                first = false
                 return item
             else
                 return self()
@@ -158,7 +159,12 @@ do
     ---@return integer
     function Fn.Iterator:ipairs()
         return function(next, count)
-            return count + 1, next()
+            local v = next()
+            if v then
+                return count + 1, v
+            else
+                return nil, nil
+            end
         end, self, 0
     end
 end
@@ -226,7 +232,7 @@ do
     ---@return number?
     ---@nodiscard
     function Fn.FiniteIterator:sum()
-        return self:reduce(function(x, y) return x + y end)
+        return self:reduce(Fn:op("+"), 0)
     end
 
     --- Cast the iterator to a table.
@@ -355,7 +361,7 @@ do
 
         local current = 0
         return Fn.InfiniteIterator.new(function()
-            current = (current + 1) % #list
+            current = (current) % #list + 1
             return list[current]
         end)
     end
@@ -370,9 +376,8 @@ do
     ---@return Fn.InfiniteIterator
     function Fn:urandom(m, n, randFunc)
         randFunc = randFunc or math.random
-        return Fn.InfiniteIterator.new( Fn:bindSeal(randFunc, m, n) )
-
-        -- Fn:counter(0, 0):map(Fn:bind(math.random, 0, 10))
+        -- return Fn.InfiniteIterator.new( Fn:bindSeal(randFunc, m, n) )
+        return Fn.InfiniteIterator.new( function() return randFunc(m,n) end )
     end
 
 end
@@ -397,6 +402,10 @@ do
     ---| "or"
     ---| "."
 
+    ---@alias Fn.opSymbolUnary
+    ---| "not"
+    ---| "neg"
+
     local operators = {
         ["+"]  = function(a, b) return a + b end,
         ["-"]  = function(a, b) return a - b end,
@@ -414,13 +423,15 @@ do
         ["and"] = function(a, b) return a and b end,
         ["or"] = function(a, b) return a or b end,
         ["."] = function(a, b) return a[b] end,
+        ["not"] = function(a) return not a end,
+        ["neg"] = function(a) return -a end,
     }
 
     --- Returns operator as a function, with filled parameter
     ---@overload fun(self, symbol: Fn.opSymbol                ): fun(a: any, b: any): any
     ---@overload fun(self, symbol: Fn.opSymbol, a: any        ): fun(b: any): any
     ---@overload fun(self, symbol: Fn.opSymbol, _: nil, b: any): fun(a: any): any
-    ---@overload fun(self, symbol: Fn.opSymbol, a: any, b: nil): fun(): any
+    ---@overload fun(self, symbol: Fn.opSymbolUnary           ): fun(a: any): any
     function Fn:op(symbol, a, b)
         local opfunc = operators[symbol]
         if not opfunc then error("bad argument #2 to Fn.op (opSymbol expected)") end
@@ -437,15 +448,14 @@ do
         end
     end
 
-    -- Workaround function to deal with luajit's mysterious unpack() behavior
-    -- e.g. on luajit, unpack({nil, 1, nil, n=3}) ~= (nil, 1, nil)
-    -- This function gets correct result on such case
-    local function unpack2(packed, count)
-        count = count or 1
-        if count > packed.n then return end
-        return packed[count], unpack2(packed, count + 1)
+    --- Returns negated function.
+    ---@param func fun(any...): boolean
+    ---@return fun(any...): boolean
+    function Fn:negate(func)
+        return function(...)
+            return not func(...)
+        end
     end
-
 
     --- Returns function with prefilled arguments.
     ---@generic T1, T2, R
@@ -463,7 +473,7 @@ do
             for i=1, args1.n do argsTbl[i] = args1[i] end
             for j=1, args2.n do argsTbl[j + args1.n] = args2[j] end
 
-            return func(unpack2(argsTbl))
+            return func(unpack(argsTbl, 1, argsTbl.n))
         end
     end
 
@@ -475,7 +485,7 @@ do
     function Fn:bindSeal(func, ...)
         local args = table.pack(...)
         return function()
-            return func(unpack2(args))
+            return func(unpack(args, 1, args.n))
         end
     end
 
