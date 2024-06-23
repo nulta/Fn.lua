@@ -101,9 +101,9 @@ Fn.Iterator
 ```
 
  Returns new InfiniteIterator which creates random numbers.
- - `fn:urandom()`: Returns random float iterator within the range `[0, 1)`.
- - `fn:urandom(m)`: Returns random integer iterator within the range `[1, m]`.
- - `fn:urandom(m, n)`: Returns random integer iterator within the range `[m, n]`.
+ - `Fn:urandom()`: Returns random float iterator within the range `[0, 1)`.
+ - `Fn:urandom(m)`: Returns random integer iterator within the range `[1, m]`.
+ - `Fn:urandom(m, n)`: Returns random integer iterator within the range `[m, n]`.
 
 @*param* `randFunc` — RNG function to use instead of math.random.
 

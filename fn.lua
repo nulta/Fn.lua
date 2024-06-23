@@ -4,7 +4,7 @@ local fnMeta = {}
 
 ---@class Fn
 ---@overload fun(tbl: table): Fn.FiniteIterator
-local fn = setmetatable({}, fnMeta)
+local Fn = setmetatable({}, fnMeta)
 
 
 -- Fn.Iterator
@@ -12,17 +12,17 @@ do
     ---@generic T
     ---@class Fn.Iterator<T>
     ---@overload fun(): any?
-    fn.Iterator = {}
+    Fn.Iterator = {}
 
     --- Initialize new Iterator.
     ---@generic T
     ---@param next fun(self: Fn.Iterator<T>): T
     ---@return Fn.Iterator
     ---@nodiscard
-    function fn.Iterator.new(next)
+    function Fn.Iterator.new(next)
         local meta = {
             __call = next,
-            __index = fn.Iterator
+            __index = Fn.Iterator
         }
 
         return setmetatable({}, meta)
@@ -30,8 +30,8 @@ do
 
     --- Returns null iterator. null iterator always returns nil.
     ---@return Fn.FiniteIterator
-    function fn.Iterator.null()
-        return fn.FiniteIterator.new(function() return nil end)
+    function Fn.Iterator.null()
+        return Fn.FiniteIterator.new(function() return nil end)
     end
 
     --- Maps iterator with given function.
@@ -39,7 +39,7 @@ do
     ---@param func fun(val: T): U
     ---@return Fn.Iterator
     ---@nodiscard
-    function fn.Iterator:map(func)
+    function Fn.Iterator:map(func)
         return self.new(function()
             local x = self()
             if x == nil then return nil end
@@ -52,7 +52,7 @@ do
     ---@param filter fun(val: T): boolean
     ---@return T?
     ---@nodiscard
-    function fn.Iterator:find(filter)
+    function Fn.Iterator:find(filter)
         for val in self do
             if filter(val) then return val end
         end
@@ -64,7 +64,7 @@ do
     ---@param filter fun(val: T): boolean
     ---@return Fn.Iterator
     ---@nodiscard
-    function fn.Iterator:filter(filter)
+    function Fn.Iterator:filter(filter)
         return self.new(function()
             return self:find(filter)
         end)
@@ -73,7 +73,7 @@ do
     --- Filters out duplicate values from iterator.
     ---@return Fn.Iterator
     ---@nodiscard
-    function fn.Iterator:unique()
+    function Fn.Iterator:unique()
         local values = {}
         return self:filter(function(x)
             if values[x] then return false end
@@ -87,9 +87,9 @@ do
     ---@param limit integer
     ---@return Fn.FiniteIterator
     ---@nodiscard
-    function fn.Iterator:limit(limit)
+    function Fn.Iterator:limit(limit)
         local count = 0
-        return fn.FiniteIterator.new(function()
+        return Fn.FiniteIterator.new(function()
             if count >= limit then return nil end
             count = count + 1
             return self()
@@ -101,7 +101,7 @@ do
     ---@param test fun(T): boolean
     ---@return Fn.Iterator
     ---@nodiscard
-    function fn.Iterator:limitWhile(test)
+    function Fn.Iterator:limitWhile(test)
         return self.new(function()
             local val = self()
             if not test(val) then return nil end
@@ -114,7 +114,7 @@ do
     ---@param amount integer
     ---@return Fn.Iterator
     ---@nodiscard
-    function fn.Iterator:skip(amount)
+    function Fn.Iterator:skip(amount)
         for _=1, amount do
             local x = self()
             if x == nil then
@@ -129,7 +129,7 @@ do
     ---@param test fun(T): boolean
     ---@return Fn.Iterator
     ---@nodiscard
-    function fn.Iterator:skipWhile(test)
+    function Fn.Iterator:skipWhile(test)
         local item = self:find(function(x) return not test(x) end)
         local first = true
 
@@ -145,7 +145,7 @@ do
     --- Returns true if the iterator produces at least one item which is not false.
     ---@return boolean
     ---@nodiscard
-    function fn.Iterator:some()
+    function Fn.Iterator:some()
         for x in self do
             if x ~= false then return true end
         end
@@ -156,7 +156,7 @@ do
     ---@return function
     ---@return Fn.Iterator
     ---@return integer
-    function fn.Iterator:ipairs()
+    function Fn.Iterator:ipairs()
         return function(next, count)
             return count + 1, next()
         end, self, 0
@@ -167,17 +167,17 @@ end
 -- Fn.FiniteIterator
 do
     ---@class Fn.FiniteIterator<T>: Fn.Iterator<T>
-    fn.FiniteIterator = setmetatable({}, {__index = fn.Iterator})
+    Fn.FiniteIterator = setmetatable({}, {__index = Fn.Iterator})
 
     --- Initialize new FiniteIterator.
     ---@generic T
     ---@param next fun(self: Fn.FiniteIterator<T>): T
     ---@return Fn.FiniteIterator
     ---@nodiscard
-    function fn.FiniteIterator.new(next)
+    function Fn.FiniteIterator.new(next)
         local meta = {
             __call = next,
-            __index = fn.FiniteIterator
+            __index = Fn.FiniteIterator
         }
 
         return setmetatable({}, meta)
@@ -186,7 +186,7 @@ do
     --- Returns count of the iterations.
     ---@return integer
     ---@nodiscard
-    function fn.FiniteIterator:count()
+    function Fn.FiniteIterator:count()
         local count = 0
         for _ in self do
             count = count + 1
@@ -200,7 +200,7 @@ do
     ---@param initialValue T?
     ---@return T?
     ---@nodiscard
-    function fn.FiniteIterator:reduce(func, initialValue)
+    function Fn.FiniteIterator:reduce(func, initialValue)
         local accumulated = initialValue                     -- initialValue
         if accumulated == nil then accumulated = self() end  -- no initialValue?
         if accumulated == nil then return nil end            -- and iterator immediately died?
@@ -215,7 +215,7 @@ do
     --- Returns true if every items that the iterator produces are not false, **or if the iterator is empty.**
     ---@return boolean
     ---@nodiscard
-    function fn.FiniteIterator:every()
+    function Fn.FiniteIterator:every()
         for x in self do
             if x == false then return false end
         end
@@ -225,7 +225,7 @@ do
     --- Returns the sum of items.
     ---@return number?
     ---@nodiscard
-    function fn.FiniteIterator:sum()
+    function Fn.FiniteIterator:sum()
         return self:reduce(function(x, y) return x + y end)
     end
 
@@ -233,7 +233,7 @@ do
     ---@generic T
     ---@return {[integer]: T}
     ---@nodiscard
-    function fn.FiniteIterator:table()
+    function Fn.FiniteIterator:table()
         local tbl = {}
         for x in self do
             table.insert(tbl, x)
@@ -246,14 +246,14 @@ do
     ---@param seperator string?
     ---@return string
     ---@nodiscard
-    function fn.FiniteIterator:concat(seperator)
+    function Fn.FiniteIterator:concat(seperator)
         return table.concat(self:table(), seperator)
     end
 
     ---Executes given function once for each elements of iterator, in order.
     ---@param func function
     ---@return nil
-    function fn.FiniteIterator:forEach(func)
+    function Fn.FiniteIterator:forEach(func)
         for x in self do
             func(x)
         end
@@ -262,39 +262,39 @@ do
     --- Returns reversed iterator. It uses self:table() under the hood.
     ---@return Fn.FiniteIterator
     ---@nodiscard
-    function fn.FiniteIterator:reversed()
+    function Fn.FiniteIterator:reversed()
         local tbl = self:table()
-        return fn:range(#tbl, 1, -1):map( fn:op(".", tbl) )
+        return Fn:range(#tbl, 1, -1):map( Fn:op(".", tbl) )
     end
 
     --- Returns sorted iterator. It uses self:table() under the hood.
     ---@return Fn.FiniteIterator
     ---@nodiscard
-    function fn.FiniteIterator:sorted(func)
+    function Fn.FiniteIterator:sorted(func)
         local tbl = self:table()
         table.sort(tbl, func)
-        return fn(tbl)
+        return Fn(tbl)
     end
 
     ---@class Fn.InfiniteIterator<T>: Fn.Iterator<T>
-    fn.InfiniteIterator = setmetatable({}, {__index = fn.Iterator})
+    Fn.InfiniteIterator = setmetatable({}, {__index = Fn.Iterator})
 
     --- Initialize new InfiniteIterator.
     ---@generic T
     ---@param next fun(self: Fn.InfiniteIterator<T>): T
     ---@return Fn.InfiniteIterator
     ---@nodiscard
-    function fn.InfiniteIterator.new(next)
+    function Fn.InfiniteIterator.new(next)
         local meta = {
             __call = next,
-            __index = fn.InfiniteIterator
+            __index = Fn.InfiniteIterator
         }
 
         return setmetatable({}, meta)
     end
 end
 
--- fn:range, fn:counter
+-- Fn:range, Fn:counter
 do
     --- Returns new FiniteIterator which creates numbers. Default value for `from` is 1.
     ---@param from number Default is 1. Inclusive.
@@ -303,9 +303,9 @@ do
     ---@return Fn.FiniteIterator
     ---@overload fun(self, to: number, _: nil, step: number): Fn.FiniteIterator
     ---@overload fun(self, to: number): Fn.FiniteIterator
-    function fn:range(from, to, step)
-        assert(from, "bad argument #2 to fn.range (number expected, got nil or false)")
-        assert(step ~= 0, "bad argument #4 to fn.range (step must not be 0)")
+    function Fn:range(from, to, step)
+        assert(from, "bad argument #2 to Fn.range (number expected, got nil or false)")
+        assert(step ~= 0, "bad argument #4 to Fn.range (step must not be 0)")
 
         step = step or 1
         if not to then
@@ -314,7 +314,7 @@ do
         end
 
         local current = from
-        return fn.FiniteIterator.new(function()
+        return Fn.FiniteIterator.new(function()
             if 0 < step then
                 if to < current then return nil end
             else
@@ -331,12 +331,12 @@ do
     ---@param from number? Default to 1.
     ---@param step number? Default to 1.
     ---@return Fn.InfiniteIterator
-    function fn:counter(from, step)
+    function Fn:counter(from, step)
         from = from or 1
         step = step or 1
 
         local current = from
-        return fn.InfiniteIterator.new(function()
+        return Fn.InfiniteIterator.new(function()
             local val = current
             current = current + step
             return val
@@ -347,37 +347,37 @@ do
     --- Return a null iterator if `#list == 0`.
     ---@param list table<integer, any>
     ---@return Fn.InfiniteIterator
-    function fn:repeater(list)
+    function Fn:repeater(list)
         if #list == 0 then
             ---@type Fn.InfiniteIterator
-            return fn.Iterator.null()
+            return Fn.Iterator.null()
         end
 
         local current = 0
-        return fn.InfiniteIterator.new(function()
+        return Fn.InfiniteIterator.new(function()
             current = (current + 1) % #list
             return list[current]
         end)
     end
 
     --- Returns new InfiniteIterator which creates random numbers.
-    --- - `fn:urandom()`: Returns random float iterator within the range `[0, 1)`.
-    --- - `fn:urandom(m)`: Returns random integer iterator within the range `[1, m]`.
-    --- - `fn:urandom(m, n)`: Returns random integer iterator within the range `[m, n]`.
+    --- - `Fn:urandom()`: Returns random float iterator within the range `[0, 1)`.
+    --- - `Fn:urandom(m)`: Returns random integer iterator within the range `[1, m]`.
+    --- - `Fn:urandom(m, n)`: Returns random integer iterator within the range `[m, n]`.
     ---@param m integer?
     ---@param n integer?
     ---@param randFunc? fun(m: integer?, n: integer?): number RNG function to use instead of math.random.
     ---@return Fn.InfiniteIterator
-    function fn:urandom(m, n, randFunc)
+    function Fn:urandom(m, n, randFunc)
         randFunc = randFunc or math.random
-        return fn.InfiniteIterator.new( fn:bindSeal(randFunc, m, n) )
+        return Fn.InfiniteIterator.new( Fn:bindSeal(randFunc, m, n) )
 
-        -- fn:counter(0, 0):map(fn:bind(math.random, 0, 10))
+        -- Fn:counter(0, 0):map(Fn:bind(math.random, 0, 10))
     end
 
 end
 
--- fn:op("+")
+-- Fn:op("+")
 do
     ---@alias Fn.opSymbol
     ---| "+"
@@ -421,9 +421,9 @@ do
     ---@overload fun(self, symbol: Fn.opSymbol, a: any        ): fun(b: any): any
     ---@overload fun(self, symbol: Fn.opSymbol, _: nil, b: any): fun(a: any): any
     ---@overload fun(self, symbol: Fn.opSymbol, a: any, b: nil): fun(): any
-    function fn:op(symbol, a, b)
+    function Fn:op(symbol, a, b)
         local opfunc = operators[symbol]
-        if not opfunc then error("bad argument #2 to fn.op (opSymbol expected)") end
+        if not opfunc then error("bad argument #2 to Fn.op (opSymbol expected)") end
 
         if a == nil and b == nil then
             return opfunc
@@ -453,7 +453,7 @@ do
     ---@param a T1
     ---@param ... T2?
     ---@return fun(...: T2): R
-    function fn:bind(func, a,...)
+    function Fn:bind(func, a,...)
         local args1 = table.pack(a, ...)
         return function(...)
             local args2 = table.pack(...)
@@ -472,7 +472,7 @@ do
     ---@param func fun(...: T): R
     ---@param ... T
     ---@return fun(): R
-    function fn:bindSeal(func, ...)
+    function Fn:bindSeal(func, ...)
         local args = table.pack(...)
         return function()
             return func(unpack2(args))
@@ -482,19 +482,19 @@ do
 
 end
 
--- fn(arg)
+-- Fn(arg)
 do
-    --- Cast the given argument into matching fn type.
+    --- Cast the given argument into matching Fn type.
     --- - table -> Fn.FiniteIterator
     --- - string -> Fn.Utf8String
     ---@param arg table
     function fnMeta:__call(arg)
         if type(arg) == "table" then
-            return fn:range(#arg):map(function(i) return arg[i] end)
+            return Fn:range(#arg):map(function(i) return arg[i] end)
         end
 
         error("bad argument #2 to fnMeta.__call (table expected)")
     end
 end
 
-return fn
+return Fn

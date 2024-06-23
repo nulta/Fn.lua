@@ -1,4 +1,4 @@
-local fn = require("fn")
+local Fn = require("fn")
 
 local USE_COLOR = pcall(function() require("pretty-print") end)
 local COL_RED = USE_COLOR and "\27[91m" or ""
@@ -86,112 +86,112 @@ end
 
 -- Test --
 do
-    section "fn:bind()"; do
+    section "Fn:bind()"; do
         test "Examples"
-        testTrue(fn:bind(math.max, 100)(2, 55, 7) == 100)
-        testTrue(fn:bind(table.pack, 1, 2)(3, nil)[4] == nil)
+        testTrue(Fn:bind(math.max, 100)(2, 55, 7) == 100)
+        testTrue(Fn:bind(table.pack, 1, 2)(3, nil)[4] == nil)
 
         test "no additional args"
-        testEquals(fn:bind(math.max, 0)(), 0)
-        testEquals(fn:bind(math.max, 0, 1, 2)(), 2)
-        testEquals(fn:bind(math.max, 2, 1, 0)(), 2)
-        testEquals(fn:bind(math.max, 2, 1, 0, 10, 20, 30, 100, 200, 300, -1, -2, -3)(), 300)
-        testTable(fn:bind(table.pack, "hello", "HELLO", "world")(), {"hello","HELLO","world",n=3})
-        testEquals(fn:bind(table.concat, {"hello","HELLO","world"})(), "helloHELLOworld")
+        testEquals(Fn:bind(math.max, 0)(), 0)
+        testEquals(Fn:bind(math.max, 0, 1, 2)(), 2)
+        testEquals(Fn:bind(math.max, 2, 1, 0)(), 2)
+        testEquals(Fn:bind(math.max, 2, 1, 0, 10, 20, 30, 100, 200, 300, -1, -2, -3)(), 300)
+        testTable(Fn:bind(table.pack, "hello", "HELLO", "world")(), {"hello","HELLO","world",n=3})
+        testEquals(Fn:bind(table.concat, {"hello","HELLO","world"})(), "helloHELLOworld")
 
         test "non-nil args, additional args"
-        testEquals(fn:bind(math.max, 0)(1), 1)
-        testEquals(fn:bind(math.max, 0, 1, 2)(3, -1, -2), 3)
-        testEquals(fn:bind(math.max, 0, 1, 2)(3, 4, 5), 5)
-        testEquals(fn:bind(table.concat, {"hello","HELLO","world"})(" "), "hello HELLO world")
-        testEquals(-fn:bind(setmetatable, {x = -10})({__unm = function(t) return t.x end}), -10)
+        testEquals(Fn:bind(math.max, 0)(1), 1)
+        testEquals(Fn:bind(math.max, 0, 1, 2)(3, -1, -2), 3)
+        testEquals(Fn:bind(math.max, 0, 1, 2)(3, 4, 5), 5)
+        testEquals(Fn:bind(table.concat, {"hello","HELLO","world"})(" "), "hello HELLO world")
+        testEquals(-Fn:bind(setmetatable, {x = -10})({__unm = function(t) return t.x end}), -10)
         testEquals(
-            fn:bind(fn:bind(math.max, 2, 1, 0), 20, 30, 40)(11, 22, 50),
+            Fn:bind(Fn:bind(math.max, 2, 1, 0), 20, 30, 40)(11, 22, 50),
             50
         )
         testEquals(
-            fn:bind(fn:bind(math.max, 30, 20, 40), 10, -10, -40)(),
+            Fn:bind(Fn:bind(math.max, 30, 20, 40), 10, -10, -40)(),
             40
         )
         testTable(
-            fn:bind(table.pack, "hello", "HELLO", "world")("Hello", "hELLO", "WORLD"),
+            Fn:bind(table.pack, "hello", "HELLO", "world")("Hello", "hELLO", "WORLD"),
             {n=6, "hello","HELLO","world","Hello","hELLO","WORLD"}
         )
         testEquals(
-            fn:bind(fn:bind(select, 6, "a", "b"), "c", "d")("e", "f", "g"),
+            Fn:bind(Fn:bind(select, 6, "a", "b"), "c", "d")("e", "f", "g"),
             "f"
         )
 
         test "with nil args"
-        testEquals(fn:bind(select, "#", nil, nil, nil, nil)(), 4)
-        testEquals(fn:bind(select, "#")(nil, nil, nil, nil), 4)
-        testEquals(fn:bind(select, "5", nil, nil)(nil, nil, 10), 10)
-        testEquals(fn:bind(select, "5", "A", nil)("B", nil, "C", nil), "C")
+        testEquals(Fn:bind(select, "#", nil, nil, nil, nil)(), 4)
+        testEquals(Fn:bind(select, "#")(nil, nil, nil, nil), 4)
+        testEquals(Fn:bind(select, "5", nil, nil)(nil, nil, 10), 10)
+        testEquals(Fn:bind(select, "5", "A", nil)("B", nil, "C", nil), "C")
         testTable(
-            fn:bind(fn:bind(table.pack, nil, "A", nil), "B", nil, "C")("D", nil),
+            Fn:bind(Fn:bind(table.pack, nil, "A", nil), "B", nil, "C")("D", nil),
             {n=8, nil, "A", nil, "B", nil, "C", "D", nil}
         )
     end
 
-    section "fn:bindSeal()"; do
+    section "Fn:bindSeal()"; do
         test "Examples"
-        testTrue(fn:bindSeal(math.random, 0, 4)() <= 4)
+        testTrue(Fn:bindSeal(math.random, 0, 4)() <= 4)
 
         test "no nil args"
-        testEquals(fn:bindSeal(math.max, 0)(), 0)
-        testEquals(fn:bindSeal(math.max, 0, 1, 2)(), 2)
-        testEquals(fn:bindSeal(math.max, 2, 1, 0)(), 2)
+        testEquals(Fn:bindSeal(math.max, 0)(), 0)
+        testEquals(Fn:bindSeal(math.max, 0, 1, 2)(), 2)
+        testEquals(Fn:bindSeal(math.max, 2, 1, 0)(), 2)
         ---@diagnostic disable-next-line: redundant-parameter
-        testEquals(fn:bindSeal(math.max, 1, 2, 0)(10, 20, 30), 2)
-        testEquals(fn:bindSeal(math.max, 2, 1, 0, 10, 20, 30, 100, 200, 300, -1, -2, -3)(), 300)
-        testTable(fn:bindSeal(table.pack, "hello", "HELLO", "world")(), {"hello","HELLO","world",n=3})
-        testEquals(-fn:bind(setmetatable, {x = -10}, {__unm = function(t) return t.x end})(), -10)
+        testEquals(Fn:bindSeal(math.max, 1, 2, 0)(10, 20, 30), 2)
+        testEquals(Fn:bindSeal(math.max, 2, 1, 0, 10, 20, 30, 100, 200, 300, -1, -2, -3)(), 300)
+        testTable(Fn:bindSeal(table.pack, "hello", "HELLO", "world")(), {"hello","HELLO","world",n=3})
+        testEquals(-Fn:bind(setmetatable, {x = -10}, {__unm = function(t) return t.x end})(), -10)
 
         test "with nil args"
-        testEquals(fn:bindSeal(select, "#", nil, nil, nil, nil)(), 4)
+        testEquals(Fn:bindSeal(select, "#", nil, nil, nil, nil)(), 4)
         ---@diagnostic disable-next-line: redundant-parameter
-        testEquals(fn:bindSeal(select, "#", nil, nil, nil, nil)(1, 2, 3, 100), 4)
-        testEquals(fn:bindSeal(select, "4", nil, nil, nil, "A")(), "A")
+        testEquals(Fn:bindSeal(select, "#", nil, nil, nil, nil)(1, 2, 3, 100), 4)
+        testEquals(Fn:bindSeal(select, "4", nil, nil, nil, "A")(), "A")
         testTable(
-            fn:bindSeal(table.pack, nil, "A", nil)(),
+            Fn:bindSeal(table.pack, nil, "A", nil)(),
             {n=3, nil, "A", nil}
         )
     end
 
-    section "fn:op()"; do
+    section "Fn:op()"; do
         test "Examples"
-        testTrue(fn:op("+")(1, 1) == 2)
-        testTrue(fn:op("+", 10)(1) == 11)
+        testTrue(Fn:op("+")(1, 1) == 2)
+        testTrue(Fn:op("+", 10)(1) == 11)
 
         test "parameter handling"
-        testEquals(fn:op("+")(10, 20), 30)
-        testEquals(fn:op("+", 10)(20), 30)
-        testEquals(fn:op("+", 10, 20)(), 30)
-        testEquals(fn:op("+", 10, 20)(100), 30)
-        testEquals(fn:op("+", 10, 20)(100, 200), 30)
-        testEquals(fn:op("+", 10, 20)(100, 200), 30)
+        testEquals(Fn:op("+")(10, 20), 30)
+        testEquals(Fn:op("+", 10)(20), 30)
+        testEquals(Fn:op("+", 10, 20)(), 30)
+        testEquals(Fn:op("+", 10, 20)(100), 30)
+        testEquals(Fn:op("+", 10, 20)(100, 200), 30)
+        testEquals(Fn:op("+", 10, 20)(100, 200), 30)
 
         test "operators"
-        testEquals(fn:op("+")(20, 7), 27)
-        testEquals(fn:op("-")(20, 7), 13)
-        testEquals(fn:op("*")(20, 7), 140)
-        testEquals(fn:op("/")(70, 7), 10)
-        testEquals(fn:op("%")(20, 7), 6)
-        testEquals(fn:op("..")("hello", "world"), "helloworld")
-        testEquals(fn:op("^")(2, 8), 256)
-        testEquals(fn:op("==")("a", "a"), true)
-        testEquals(fn:op("~=")("a", "a"), false)
-        testEquals(fn:op("<=")(10, 20), true)
-        testEquals(fn:op(">=")(10, 20), false)
-        testEquals(fn:op("<=")(10, 10), true)
-        testEquals(fn:op(">=")(10, 10), true)
-        testEquals(fn:op("<")(10, 20), true)
-        testEquals(fn:op(">")(10, 20), false)
-        testEquals(fn:op("and")(true, false), false)
-        testEquals(fn:op("or")(true, false), true)
-        testEquals(fn:op(".")({11,22}, 1), 11)
-        testEquals(fn:op(".")({11,22}, 3), nil)
-        testEquals(fn:op(".")({a="AA"}, "a"), "AA")
+        testEquals(Fn:op("+")(20, 7), 27)
+        testEquals(Fn:op("-")(20, 7), 13)
+        testEquals(Fn:op("*")(20, 7), 140)
+        testEquals(Fn:op("/")(70, 7), 10)
+        testEquals(Fn:op("%")(20, 7), 6)
+        testEquals(Fn:op("..")("hello", "world"), "helloworld")
+        testEquals(Fn:op("^")(2, 8), 256)
+        testEquals(Fn:op("==")("a", "a"), true)
+        testEquals(Fn:op("~=")("a", "a"), false)
+        testEquals(Fn:op("<=")(10, 20), true)
+        testEquals(Fn:op(">=")(10, 20), false)
+        testEquals(Fn:op("<=")(10, 10), true)
+        testEquals(Fn:op(">=")(10, 10), true)
+        testEquals(Fn:op("<")(10, 20), true)
+        testEquals(Fn:op(">")(10, 20), false)
+        testEquals(Fn:op("and")(true, false), false)
+        testEquals(Fn:op("or")(true, false), true)
+        testEquals(Fn:op(".")({11,22}, 1), 11)
+        testEquals(Fn:op(".")({11,22}, 3), nil)
+        testEquals(Fn:op(".")({a="AA"}, "a"), "AA")
     end
 
     completeAllTest()
