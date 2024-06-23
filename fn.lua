@@ -282,6 +282,48 @@ do
         return Fn(tbl)
     end
 
+    --- Zip multiple iterators together to create a new iterator.
+    --- It's return value is a list of values from each iterator.
+    --- The new iterator will stop when any of the given iterators stop.
+    ---@param ... Fn.Iterator
+    ---@return Fn.FiniteIterator
+    function Fn.FiniteIterator:zip(...)
+        local iterators = {self, ...}
+        return Fn.FiniteIterator.new(function()
+            local values = {}
+            for _, iterator in ipairs(iterators) do
+                local value = iterator()
+                table.insert(values, value)
+                if value == nil then return nil end
+            end
+            return values
+        end)
+    end
+
+    --- Append multiple iterators together to create a new iterator.
+    ---@param ... Fn.FiniteIterator
+    ---@return Fn.FiniteIterator
+    function Fn.FiniteIterator:append(...)
+        local iterators = {self, ...}
+        local current = 1
+        return Fn.FiniteIterator.new(function()
+            local value = iterators[current]()
+            if value == nil then
+                current = current + 1
+                if current > #iterators then return nil end
+                return iterators[current]()
+            end
+            return value
+        end)
+    end
+
+    --- Prepend multiple iterators before this iterator to create a new iterator.
+    ---@param ... Fn.FiniteIterator
+    ---@return Fn.FiniteIterator
+    function Fn.FiniteIterator:prepend(...)
+        return (...):append(select(2, ...)):append(self)
+    end
+
     ---@class Fn.InfiniteIterator<T>: Fn.Iterator<T>
     Fn.InfiniteIterator = setmetatable({}, {__index = Fn.Iterator})
 

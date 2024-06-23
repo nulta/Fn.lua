@@ -236,6 +236,12 @@ do
         testEquals(Fn:range(100):reversed():sorted():concat(), Fn:range(100):concat())
         testEquals(Fn:range(100):stopIf(Fn:op("<", nil, 10)):count(), 9)
         testEquals(Fn:range(100):skip(10):count(), 90)
+
+        test "methods (4)"
+        testEquals(Fn:range(5):zip(Fn:range(5):reversed()):map(function(x) return x[1]+x[2] end):concat(), "66666")
+        testEquals(Fn:range(5):zip(Fn:range(5):reversed(), Fn:range(5)):map(function(x) return x[1]+x[2]+x[3] end):concat(), "7891011")
+        testEquals(Fn:range(5):append(Fn:range(3), Fn:range(10, 13)):concat(), "1234512310111213")
+        testEquals(Fn:range(5):prepend(Fn:range(3), Fn:range(10, 13)):concat(), "1231011121312345")
     end
 
     completeAllTest()
